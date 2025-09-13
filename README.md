@@ -1,4 +1,4 @@
-# LogTree - Hierarchical Tracing Library for Spring Boot
+# LogTree Spring Boot Starter - Hierarchical Tracing Library
 
 LogTree is a lightweight, hierarchical tracing library designed for Spring Boot applications. It provides visual tree-structured logs that make it easy to track request flows, debug complex systems, and understand error causality chains.
 
@@ -23,7 +23,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.yourusername:logtree:1.0.0")
+    implementation("com.github.yourusername:logtree-spring-boot-starter:1.0.0")
 }
 ```
 

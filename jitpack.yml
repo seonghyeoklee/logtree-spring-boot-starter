@@ -1,0 +1,15 @@
+# JitPack 빌드 설정
+jdk:
+  - openjdk17
+
+# Before install hook
+before_install:
+  - echo "LogTree build starting with Java 17"
+
+# Install hook  
+install:
+  - echo "Building LogTree..."
+
+# Build hook
+before_script:
+  - chmod +x gradlew

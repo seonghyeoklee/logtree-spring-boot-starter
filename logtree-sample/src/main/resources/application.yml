@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: logtree-sample
+
+server:
+  port: 8081
+
+# LogTree Configuration
+logtree:
+  enabled: true
+  auto-trace-controllers: true
+  auto-trace-services: false
+  include-headers: false
+  exclude-headers:
+    - Authorization
+    - Cookie
+  exclude-urls:
+    - /health
+    - /actuator/**
+  max-depth: 10
+  colored-output: true
+  log-style: tree
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    io.github.logtree: DEBUG
+  pattern:
+    console: "%cyan(%d{HH:mm:ss.SSS}) [%highlight(%-5level)] [%yellow(%15.15t)] [%blue(%X{traceId:-NO_TRACE})] %green(%X{visual:-}) %white(%logger{36}.%M) - %msg%n"

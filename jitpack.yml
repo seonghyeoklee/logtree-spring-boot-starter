@@ -9,6 +9,7 @@ before_install:
 # Install hook  
 install:
   - echo "Building LogTree..."
+  - ./gradlew publishToMavenLocal
 
 # Build hook
 before_script:

@@ -1,1 +1,2 @@
 io.github.logtree.spring.config.LogTreeAutoConfiguration
+io.github.logtree.spring.config.LogTreeSqlLoggingAutoConfiguration

@@ -23,9 +23,44 @@ data class LogTreeProperties(
     var autoTraceServices: Boolean = false,
     
     /**
+     * Whether to auto-trace all repositories
+     */
+    var autoTraceRepositories: Boolean = false,
+    
+    /**
      * Whether to include request headers in trace
      */
     var includeHeaders: Boolean = false,
+    
+    /**
+     * Whether to include method arguments in trace
+     */
+    var includeArgs: Boolean = false,
+    
+    /**
+     * Whether to include method return values in trace
+     */
+    var includeResult: Boolean = false,
+    
+    /**
+     * Whether to track errors with causality chains
+     */
+    var trackErrors: Boolean = true,
+    
+    /**
+     * Whether to trace transaction boundaries with visual markers
+     */
+    var traceTransactionBoundaries: Boolean = true,
+    
+    /**
+     * Whether to trace SQL queries within LogTree spans (replaces p6spy functionality)
+     */
+    var traceSqlQueries: Boolean = false,
+    
+    /**
+     * Maximum length for SQL query logging (longer queries will be truncated)
+     */
+    var sqlQueryMaxLength: Int = 500,
     
     /**
      * Headers to exclude from tracing
@@ -36,6 +71,11 @@ data class LogTreeProperties(
      * URL patterns to exclude from tracing
      */
     var excludeUrls: List<String> = listOf("/health", "/actuator/**"),
+    
+    /**
+     * Package patterns to exclude from tracing
+     */
+    var excludePackages: List<String> = listOf(),
     
     /**
      * Maximum depth for nested spans

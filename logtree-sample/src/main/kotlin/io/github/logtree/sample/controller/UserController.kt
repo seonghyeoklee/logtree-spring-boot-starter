@@ -34,4 +34,10 @@ class UserController(
     fun errorDemo(): String {
         return userService.demonstrateError()
     }
+    
+    @PostMapping("/transaction-demo")
+    @Traceable(name = "transactionDemo", includeArgs = true)
+    fun transactionDemo(@RequestBody user: User): User {
+        return userService.createUser(user)
+    }
 }

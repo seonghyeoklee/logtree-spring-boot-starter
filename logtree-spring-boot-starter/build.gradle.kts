@@ -12,6 +12,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-aop:3.2.0")
     implementation("org.springframework.boot:spring-boot-autoconfigure:3.2.0")
     
+    // Spring Transaction (for TransactionSynchronizationManager)
+    implementation("org.springframework:spring-tx:6.0.13")
+    
     // Annotation processor
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor:3.2.0")
     

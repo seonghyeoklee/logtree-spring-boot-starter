@@ -6,6 +6,7 @@ import io.github.logtree.sample.model.User
 import io.github.logtree.sample.repository.UserRepository
 import io.github.logtree.spring.annotation.Traceable
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class UserService(
@@ -29,6 +30,7 @@ class UserService(
     }
     
     @Traceable(name = "UserService.createUser", includeArgs = true)
+    @Transactional
     fun createUser(user: User): User {
         LogTree.span("Validation") {
             validationService.validateUser(user)

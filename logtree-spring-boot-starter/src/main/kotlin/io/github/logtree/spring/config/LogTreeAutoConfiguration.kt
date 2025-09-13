@@ -1,6 +1,7 @@
 package io.github.logtree.spring.config
 
 import io.github.logtree.spring.aspect.LogTreeAspect
+import io.github.logtree.spring.aspect.LogTreeAutoTraceAspect
 import io.github.logtree.spring.filter.LogTreeFilter
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -34,5 +35,11 @@ class LogTreeAutoConfiguration {
     @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
     fun logTreeFilter(properties: LogTreeProperties): LogTreeFilter {
         return LogTreeFilter(properties)
+    }
+    
+    @Bean
+    @ConditionalOnProperty(prefix = "logtree", name = ["autoTraceControllers"], havingValue = "true", matchIfMissing = true)
+    fun logTreeAutoTraceAspect(properties: LogTreeProperties): LogTreeAutoTraceAspect {
+        return LogTreeAutoTraceAspect(properties)
     }
 }

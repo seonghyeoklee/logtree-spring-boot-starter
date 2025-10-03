@@ -1,5 +1,7 @@
 package io.github.logtree.spring.config
 
+import io.github.logtree.spring.admin.LogTreeAdminController
+import io.github.logtree.spring.admin.LogTreeMetricsCollector
 import io.github.logtree.spring.aspect.LogTreeAspect
 import io.github.logtree.spring.aspect.LogTreeAutoTraceAspect
 import io.github.logtree.spring.filter.LogTreeFilter
@@ -41,5 +43,19 @@ class LogTreeAutoConfiguration {
     @ConditionalOnProperty(prefix = "logtree", name = ["autoTraceControllers"], havingValue = "true", matchIfMissing = true)
     fun logTreeAutoTraceAspect(properties: LogTreeProperties): LogTreeAutoTraceAspect {
         return LogTreeAutoTraceAspect(properties)
+    }
+
+    @Bean
+    fun logTreeMetricsCollector(): LogTreeMetricsCollector {
+        return LogTreeMetricsCollector()
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "logtree.admin", name = ["enabled"], havingValue = "true")
+    fun logTreeAdminController(
+        properties: LogTreeProperties,
+        metricsCollector: LogTreeMetricsCollector
+    ): LogTreeAdminController {
+        return LogTreeAdminController(properties, metricsCollector)
     }
 }

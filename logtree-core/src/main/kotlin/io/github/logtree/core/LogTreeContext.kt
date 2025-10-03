@@ -105,9 +105,16 @@ class LogTreeContext {
         /**
          * Get current span context
          */
-        fun currentSpan(): SpanContext? = 
+        fun currentSpan(): SpanContext? =
             if (spanStack.get().isEmpty()) null else spanStack.get().peek()
-        
+
+        /**
+         * Get all spans in the current trace
+         */
+        fun getAllSpans(): List<SpanContext> {
+            return spanStack.get().toList()
+        }
+
         /**
          * Clear all context
          */

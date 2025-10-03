@@ -90,5 +90,25 @@ data class LogTreeProperties(
     /**
      * Log pattern style: "tree", "flat", "json"
      */
-    var logStyle: String = "tree"
+    var logStyle: String = "tree",
+
+    /**
+     * Admin UI configuration
+     */
+    var admin: AdminProperties = AdminProperties()
+)
+
+/**
+ * Admin UI configuration properties
+ */
+data class AdminProperties(
+    /**
+     * Whether to enable admin UI
+     */
+    var enabled: Boolean = false,
+
+    /**
+     * Maximum number of traces to keep in memory
+     */
+    var maxTraces: Int = 100
 )

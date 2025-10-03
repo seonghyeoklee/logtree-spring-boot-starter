@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogTree Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: none;
+            margin-bottom: 1.5rem;
+        }
+        .metric-card {
+            text-align: center;
+            padding: 1.5rem;
+        }
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .metric-label {
+            color: #6c757d;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+        }
+        .trace-item {
+            border-left: 4px solid #667eea;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: white;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .trace-item:hover {
+            box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+            transform: translateX(5px);
+        }
+        .trace-item.error {
+            border-left-color: #dc3545;
+        }
+        .config-toggle {
+            margin-bottom: 0.75rem;
+        }
+        .span-tree {
+            font-family: monospace;
+            white-space: pre;
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+        }
+        .loading {
+            text-align: center;
+            padding: 2rem;
+        }
+        .badge-success {
+            background-color: #28a745;
+        }
+        .badge-danger {
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">
+                <i class="bi bi-tree"></i> LogTree Admin Dashboard
+            </span>
+            <button class="btn btn-light btn-sm" onclick="refreshAll()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Metrics Section -->
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="metric-value" id="totalTraces">-</div>
+                    <div class="metric-label">Total Traces</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="metric-value" id="totalSpans">-</div>
+                    <div class="metric-label">Total Spans</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="metric-value" id="avgDuration">-</div>
+                    <div class="metric-label">Avg Duration (ms)</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="metric-value" id="errorRate">-</div>
+                    <div class="metric-label">Error Rate</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Configuration Section -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-gear"></i> Configuration</h5>
+                    </div>
+                    <div class="card-body" id="configSection">
+                        <div class="loading">Loading configuration...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Traces Section -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-activity"></i> Recent Traces</h5>
+                        <button class="btn btn-sm btn-outline-danger" onclick="clearMetrics()">
+                            <i class="bi bi-trash"></i> Clear
+                        </button>
+                    </div>
+                    <div class="card-body" id="tracesSection" style="max-height: 600px; overflow-y: auto;">
+                        <div class="loading">Loading traces...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trace Details Modal -->
+    <div class="modal fade" id="traceModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Trace Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="traceDetails"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_BASE = '/admin/logtree/api';
+        let traceModal;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            traceModal = new bootstrap.Modal(document.getElementById('traceModal'));
+            refreshAll();
+            // Auto-refresh every 5 seconds
+            setInterval(refreshAll, 5000);
+        });
+
+        async function refreshAll() {
+            await Promise.all([
+                loadMetrics(),
+                loadConfig(),
+                loadTraces()
+            ]);
+        }
+
+        async function loadMetrics() {
+            try {
+                const response = await fetch(`${API_BASE}/metrics`);
+                const data = await response.json();
+
+                document.getElementById('totalTraces').textContent = data.totalTraces || 0;
+                document.getElementById('totalSpans').textContent = data.totalSpans || 0;
+                document.getElementById('avgDuration').textContent = data.averageDuration || 0;
+                document.getElementById('errorRate').textContent = `${data.errorRate || 0}%`;
+            } catch (error) {
+                console.error('Failed to load metrics:', error);
+            }
+        }
+
+        async function loadConfig() {
+            try {
+                const response = await fetch(`${API_BASE}/config`);
+                const config = await response.json();
+
+                const configHtml = Object.entries(config)
+                    .filter(([key]) => typeof config[key] === 'boolean')
+                    .map(([key, value]) => `
+                        <div class="config-toggle">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="cfg_${key}"
+                                       ${value ? 'checked' : ''} onchange="updateConfig('${key}', this.checked)">
+                                <label class="form-check-label" for="cfg_${key}">
+                                    ${key}
+                                </label>
+                            </div>
+                        </div>
+                    `).join('');
+
+                document.getElementById('configSection').innerHTML = configHtml;
+            } catch (error) {
+                console.error('Failed to load config:', error);
+                document.getElementById('configSection').innerHTML =
+                    '<div class="alert alert-danger">Failed to load configuration</div>';
+            }
+        }
+
+        async function updateConfig(key, value) {
+            try {
+                const response = await fetch(`${API_BASE}/config`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ [key]: value })
+                });
+
+                if (response.ok) {
+                    showToast('Configuration updated successfully', 'success');
+                }
+            } catch (error) {
+                console.error('Failed to update config:', error);
+                showToast('Failed to update configuration', 'danger');
+            }
+        }
+
+        async function loadTraces() {
+            try {
+                const response = await fetch(`${API_BASE}/traces/recent?limit=20`);
+                const traces = await response.json();
+
+                if (traces.length === 0) {
+                    document.getElementById('tracesSection').innerHTML =
+                        '<div class="text-muted text-center">No traces recorded yet</div>';
+                    return;
+                }
+
+                const tracesHtml = traces.map(trace => {
+                    const duration = trace.duration || 0;
+                    const errorClass = trace.error ? 'error' : '';
+                    const errorBadge = trace.error ?
+                        `<span class="badge bg-danger ms-2">ERROR</span>` : '';
+
+                    return `
+                        <div class="trace-item ${errorClass}" onclick="showTraceDetails('${trace.traceId}')">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>${trace.traceId.substring(0, 8)}</strong>
+                                    ${errorBadge}
+                                    <small class="text-muted ms-2">${trace.spanCount} spans</small>
+                                </div>
+                                <div>
+                                    <span class="badge bg-primary">${duration}ms</span>
+                                </div>
+                            </div>
+                            ${trace.error ? `
+                                <div class="text-danger small mt-1">
+                                    <i class="bi bi-exclamation-triangle"></i> ${trace.error.type}: ${trace.error.message || ''}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+
+                document.getElementById('tracesSection').innerHTML = tracesHtml;
+            } catch (error) {
+                console.error('Failed to load traces:', error);
+                document.getElementById('tracesSection').innerHTML =
+                    '<div class="alert alert-danger">Failed to load traces</div>';
+            }
+        }
+
+        async function showTraceDetails(traceId) {
+            try {
+                const response = await fetch(`${API_BASE}/traces/${traceId}`);
+                const trace = await response.json();
+
+                const spanTree = buildSpanTree(trace.spans);
+
+                const detailsHtml = `
+                    <h6>Trace ID: <code>${trace.traceId}</code></h6>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>Duration:</strong> ${trace.duration}ms
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Spans:</strong> ${trace.spanCount}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Status:</strong>
+                            ${trace.error ?
+                                `<span class="badge bg-danger">ERROR</span>` :
+                                `<span class="badge bg-success">SUCCESS</span>`
+                            }
+                        </div>
+                    </div>
+                    ${trace.error ? `
+                        <div class="alert alert-danger">
+                            <strong>${trace.error.type}:</strong> ${trace.error.message || 'No message'}
+                        </div>
+                    ` : ''}
+                    <h6 class="mt-3">Span Hierarchy:</h6>
+                    <div class="span-tree">${spanTree}</div>
+                `;
+
+                document.getElementById('traceDetails').innerHTML = detailsHtml;
+                traceModal.show();
+            } catch (error) {
+                console.error('Failed to load trace details:', error);
+            }
+        }
+
+        function buildSpanTree(spans) {
+            if (!spans || spans.length === 0) return 'No spans';
+
+            return spans.map(span => {
+                const indent = '  '.repeat(span.depth);
+                const symbol = span.depth === 0 ? '┌─' : span.depth === 1 ? '├─' : '│ '.repeat(span.depth - 1) + '├─';
+                return `${symbol} ${span.name} (${span.duration}ms)`;
+            }).join('\n');
+        }
+
+        async function clearMetrics() {
+            if (!confirm('Are you sure you want to clear all metrics?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/metrics`, { method: 'DELETE' });
+                if (response.ok) {
+                    showToast('Metrics cleared successfully', 'success');
+                    await refreshAll();
+                }
+            } catch (error) {
+                console.error('Failed to clear metrics:', error);
+                showToast('Failed to clear metrics', 'danger');
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            // Simple toast notification
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type} position-fixed top-0 end-0 m-3`;
+            toast.style.zIndex = '9999';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+    </script>
+</body>
+</html>

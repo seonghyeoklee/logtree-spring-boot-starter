@@ -34,9 +34,13 @@ logtree:
   exclude-urls:
     - /health
     - /actuator/**
+    - /logtree/**  # Admin UI 경로 제외
   max-depth: 10
   colored-output: true
   log-style: tree
+  admin:
+    enabled: true
+    max-traces: 100
 
 # Logging Configuration
 logging:
